@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hyperlocal — Fast food delivery in your city</title>
+  <title>Hyperlocal — Order food. Get it fast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -45,7 +45,7 @@
     .promo .ph-food{position:absolute;right:-6px;bottom:-6px;width:74px;height:74px;border-radius:16px;background:#fff3 center/cover;border:3px solid #ffffff55}
     .cats{display:flex;justify-content:space-between;margin:14px 2px}
     .cats div{width:42px;text-align:center;font-size:10px;color:#6f7682}
-    .cats .ic{width:42px;height:42px;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:18px;margin-bottom:4px}
+    .cats .ic{width:42px;height:42px;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:16px;font-weight:800;color:var(--green-mid);margin-bottom:4px}
     .scr-label{font-size:12px;font-weight:800;margin:4px 2px 8px}
     .fitem{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #f0f1f3;border-radius:14px;padding:8px;margin-bottom:8px}
     .fitem .t{width:44px;height:44px;border-radius:10px;background:#e9eef0 center/cover}
@@ -56,7 +56,9 @@
         repeating-linear-gradient(0deg,#eef1f3 0 1px,transparent 1px 26px),
         repeating-linear-gradient(90deg,#eef1f3 0 1px,transparent 1px 26px),#f6f8f9}
     .map .route{position:absolute;inset:0}
-    .pin{position:absolute;font-size:20px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
+    .pin{position:absolute;width:13px;height:13px;border-radius:50%;box-shadow:0 4px 6px rgba(0,0,0,.2)}
+    .pin.start{background:var(--ink)}
+    .pin.end{background:var(--green-mid);box-shadow:0 0 0 5px rgba(19,122,79,.28)}
     .map-card{position:absolute;left:12px;right:12px;bottom:12px;background:#fff;border-radius:16px;padding:12px;box-shadow:0 12px 24px rgba(0,0,0,.12)}
     .map-card .t{font-size:12px;font-weight:800}
     .map-card .s{font-size:10px;color:#6f7682}
@@ -72,12 +74,12 @@
       border-radius:30px;color:#fff;margin:18px;padding-bottom:0;position:relative;overflow:hidden}
     nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
     .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:#fff}
-    .logo .mark{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:18px}
+    .logo .mark{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:17px;font-weight:800}
     .nav-links{display:flex;gap:28px;font-weight:600;font-size:14px;color:rgba(255,255,255,.9)}
     .nav-links a:hover{color:#fff;text-decoration:underline}
-    .hero-head{text-align:center;max-width:620px;margin:26px auto 0}
+    .hero-head{text-align:center;max-width:640px;margin:26px auto 0}
     .hero-head h1{font-size:54px;line-height:1.04;font-weight:800;letter-spacing:-1.5px}
-    .hero-head p{margin:18px auto 26px;font-size:17px;color:rgba(255,255,255,.88);max-width:480px}
+    .hero-head p{margin:18px auto 26px;font-size:17px;color:rgba(255,255,255,.88);max-width:520px}
     .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
     /* Two phones overlapping, fanned apart, rising from the clipped bottom edge. */
     .phones{display:flex;justify-content:center;align-items:flex-end;margin-top:40px;margin-bottom:-104px}
@@ -101,7 +103,6 @@
     .blob{position:relative;display:flex;justify-content:center}
     .blob::before{content:"";position:absolute;width:280px;height:300px;background:linear-gradient(150deg,var(--green-bright),var(--green-mid));border-radius:40px 40px 44px 44px;transform:rotate(-3deg);box-shadow:0 24px 50px rgba(11,61,46,.30)}
     .blob .phone{position:relative;z-index:2}
-    .spark{position:absolute;z-index:3;color:#fff;font-size:22px;opacity:.9}
 
     /* ---------- Testimonials ---------- */
     .tcenter{text-align:center;max-width:560px;margin:0 auto 44px}
@@ -122,7 +123,7 @@
     .download{margin:0 22px;background:radial-gradient(120% 120% at 90% 10%,#2E8B62,var(--green) 60%,var(--green-deep));border-radius:30px;color:#fff;overflow:hidden}
     .dl-grid{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:20px}
     .dl-text{padding:60px 0 60px 14px}
-    .dl-text .badge{width:54px;height:54px;border-radius:16px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:26px;margin-bottom:18px}
+    .dl-text .badge{width:54px;height:54px;border-radius:16px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:24px;font-weight:800;margin-bottom:18px}
     .dl-text h2{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.05}
     .dl-img{height:340px;background:#0F5F3D center/cover;border-radius:24px}
 
@@ -134,7 +135,7 @@
     footer a{display:block;font-size:14px;margin-bottom:9px;color:rgba(255,255,255,.65)}
     footer a:hover{color:var(--green-bright)}
     .socials{display:flex;gap:10px;margin-top:16px}
-    .socials span{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:15px}
+    .socials span{min-width:36px;height:36px;padding:0 10px;border-radius:10px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:12px;font-weight:700}
     .foot-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:36px;padding-top:20px;display:flex;justify-content:space-between;font-size:13px;flex-wrap:wrap;gap:10px}
 
     @media (max-width:860px){
@@ -157,7 +158,7 @@
   <header class="hero">
     <div class="wrap">
       <nav>
-        <div class="logo"><span class="mark">🛵</span> Hyperlocal</div>
+        <div class="logo"><span class="mark">H</span> Hyperlocal</div>
         <div class="nav-links">
           <a href="#menus">Popular Menus</a>
           <a href="#track">Track Order</a>
@@ -168,8 +169,8 @@
       </nav>
 
       <div class="hero-head">
-        <h1>Fast food delivery in your city</h1>
-        <p>Order from the best restaurants and kitchens near you — fresh, hot, and at your door in minutes.</p>
+        <h1>Order food.<br>Get it fast.<br>Built for your city.</h1>
+        <p>Hyperlocal connects you to the best restaurants in Abraka and Warri — real menus, real prices, real delivery. No middleman. No Lagos pricing.</p>
         <div class="hero-cta">
           <a class="btn btn-white" href="#menus">Order Now</a>
           <a class="btn btn-ghost" href="#menus">Browse Restaurants</a>
@@ -182,22 +183,22 @@
           <div class="notch"></div>
           <div class="screen">
             <div class="scr-pad">
-              <div class="scr-top"><span>9:41</span><span>📶 🔋</span></div>
-              <div class="search">🔍 Search food, drinks…</div>
+              <div class="scr-top"><span>9:41</span><span>5G</span></div>
+              <div class="search">Search food, drinks…</div>
               <div class="promo">
                 <h5>Fast delivery<br>10% off today</h5>
-                <span class="chip">Order now →</span>
+                <span class="chip">Order now</span>
                 <div class="ph-food" style="background-image:url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80&auto=format&fit=crop')"></div>
               </div>
               <div class="cats">
-                <div><div class="ic">🍔</div>Burgers</div>
-                <div><div class="ic">🍕</div>Pizza</div>
-                <div><div class="ic">🥗</div>Salads</div>
-                <div><div class="ic">🍗</div>Grill</div>
+                <div><div class="ic">B</div>Burgers</div>
+                <div><div class="ic">P</div>Pizza</div>
+                <div><div class="ic">S</div>Salads</div>
+                <div><div class="ic">G</div>Grill</div>
               </div>
               <div class="scr-label">Popular near you</div>
-              <div class="fitem"><div class="t" style="background-image:url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=160&q=80&auto=format&fit=crop')"></div><div style="flex:1"><div class="nm">Grilled Chicken Bowl</div><div style="font-size:9px;color:#9aa0a8">★ 4.8 · 20 min</div></div><div class="pr">$10.50</div></div>
-              <div class="fitem"><div class="t" style="background-image:url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=160&q=80&auto=format&fit=crop')"></div><div style="flex:1"><div class="nm">Avocado Power Salad</div><div style="font-size:9px;color:#9aa0a8">★ 4.9 · 15 min</div></div><div class="pr">$8.00</div></div>
+              <div class="fitem"><div class="t" style="background-image:url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=160&q=80&auto=format&fit=crop')"></div><div style="flex:1"><div class="nm">Grilled Chicken Bowl</div><div style="font-size:9px;color:#9aa0a8">4.8 · 20 min</div></div><div class="pr">$10.50</div></div>
+              <div class="fitem"><div class="t" style="background-image:url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=160&q=80&auto=format&fit=crop')"></div><div style="flex:1"><div class="nm">Avocado Power Salad</div><div style="font-size:9px;color:#9aa0a8">4.9 · 15 min</div></div><div class="pr">$8.00</div></div>
             </div>
           </div>
         </div>
@@ -209,9 +210,9 @@
               <svg class="route" viewBox="0 0 200 400" preserveAspectRatio="none">
                 <path d="M40 300 C 90 250, 70 160, 150 110" fill="none" stroke="#137A4F" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>
               </svg>
-              <span class="pin" style="left:30px;top:282px">📍</span>
-              <span class="pin" style="left:140px;top:88px">🛵</span>
-              <div class="map-top">🛵 Your order is on the way</div>
+              <span class="pin start" style="left:32px;top:286px"></span>
+              <span class="pin end" style="left:146px;top:92px"></span>
+              <div class="map-top">Your order is on the way</div>
               <div class="map-card"><div class="t">Arriving in 12 min</div><div class="s">Daniel is 1.2 km away</div></div>
             </div>
           </div>
@@ -225,7 +226,7 @@
     <div class="stats">
       <div class="stat"><div class="n">8+</div><div class="l">Local kitchens</div></div>
       <div class="stat"><div class="n">1,000+</div><div class="l">Orders delivered</div></div>
-      <div class="stat"><div class="n">4.8★</div><div class="l">Customer rating</div></div>
+      <div class="stat"><div class="n">4.8</div><div class="l">Customer rating</div></div>
       <div class="stat"><div class="n">20 min</div><div class="l">Avg delivery</div></div>
     </div>
   </div>
@@ -234,14 +235,12 @@
   <section class="feat" id="menus">
     <div class="wrap feat-grid">
       <div class="blob">
-        <span class="spark" style="left:30px;top:40px">✦</span>
-        <span class="spark" style="right:30px;bottom:50px">⚡</span>
         <div class="phone">
           <div class="notch"></div>
           <div class="screen">
             <div class="scr-pad">
-              <div class="scr-top"><span>9:41</span><span>📶 🔋</span></div>
-              <div class="search">🔍 What are you craving?</div>
+              <div class="scr-top"><span>9:41</span><span>5G</span></div>
+              <div class="search">What are you craving?</div>
               <div class="promo"><h5>Free delivery<br>on your 1st order</h5><span class="chip">Use HYPERLOCAL</span><div class="ph-food" style="background-image:url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=80&auto=format&fit=crop')"></div></div>
               <div class="scr-label" style="margin-top:14px">Popular Menu</div>
               <div class="fitem"><div class="t" style="background-image:url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=160&q=80&auto=format&fit=crop')"></div><div style="flex:1"><div class="nm">Smash Burger Combo</div><div style="font-size:9px;color:#9aa0a8">Smash &amp; Grill House</div></div><div class="pr">$9.50</div></div>
@@ -254,7 +253,7 @@
         <span class="eyebrow">Popular menus</span>
         <h2>Popular menus near you</h2>
         <p>Discover trending dishes from neighbourhood kitchens — burgers, jollof, wood-fired pizza, fresh bowls and more. Every meal is made to order with fresh, locally-sourced ingredients and delivered while it's still hot.</p>
-        <div style="margin-top:24px"><a class="btn btn-green" href="#download">Explore the menu →</a></div>
+        <div style="margin-top:24px"><a class="btn btn-green" href="#download">Explore the menu</a></div>
       </div>
     </div>
   </section>
@@ -266,11 +265,9 @@
         <span class="eyebrow">Order tracking</span>
         <h2>Track your order in real time</h2>
         <p>From the moment a kitchen accepts your order to the second your rider pulls up, watch every step live on the map. Get notified at each stage — preparing, on the way, and delivered — so you always know exactly when to expect your food.</p>
-        <div style="margin-top:24px"><a class="btn btn-green" href="#download">See how it works →</a></div>
+        <div style="margin-top:24px"><a class="btn btn-green" href="#download">See how it works</a></div>
       </div>
       <div class="blob">
-        <span class="spark" style="left:24px;bottom:50px">✦</span>
-        <span class="spark" style="right:26px;top:46px">⚡</span>
         <div class="phone">
           <div class="notch"></div>
           <div class="screen">
@@ -278,9 +275,9 @@
               <svg class="route" viewBox="0 0 200 400" preserveAspectRatio="none">
                 <path d="M40 300 C 90 250, 70 160, 150 110" fill="none" stroke="#137A4F" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>
               </svg>
-              <span class="pin" style="left:30px;top:282px">🏠</span>
-              <span class="pin" style="left:140px;top:88px">🛵</span>
-              <div class="map-top">🛵 On the way to you</div>
+              <span class="pin start" style="left:32px;top:286px"></span>
+              <span class="pin end" style="left:146px;top:92px"></span>
+              <div class="map-top">On the way to you</div>
               <div class="map-card"><div class="t">Arriving in 12 min</div><div class="s">Tap to call your rider</div></div>
             </div>
           </div>
@@ -298,23 +295,23 @@
       </div>
       <div class="tgrid">
         <div class="tcard full">
-          <div class="who"><img src="https://i.pravatar.cc/100?img=12" alt=""><div><div class="nm">Daniel R.</div><div class="ro">Lagos</div></div></div>
+          <div class="who"><img src="https://i.pravatar.cc/100?img=12" alt=""><div><div class="nm">Daniel R.</div><div class="ro">Warri</div></div></div>
           <p>The smash burger arrived hot and the delivery was lightning fast. Watching it on the map is genuinely fun. Easily my go-to now.</p>
         </div>
         <div class="tcard soft">
-          <div class="who"><img src="https://i.pravatar.cc/100?img=32" alt=""><div><div class="nm">Sarah L.</div><div class="ro">Customer</div></div></div>
+          <div class="who"><img src="https://i.pravatar.cc/100?img=32" alt=""><div><div class="nm">Sarah L.</div><div class="ro">Abraka</div></div></div>
           <p>Authentic jollof just like home, generous portions, and always fresh. Reordering from the app takes two taps.</p>
         </div>
         <div class="tcard soft">
-          <div class="who"><img src="https://i.pravatar.cc/100?img=45" alt=""><div><div class="nm">Jessica D.</div><div class="ro">Customer</div></div></div>
+          <div class="who"><img src="https://i.pravatar.cc/100?img=45" alt=""><div><div class="nm">Jessica D.</div><div class="ro">Warri</div></div></div>
           <p>Healthy bowls that actually taste amazing, and they arrive on time every single time. Love the live tracking.</p>
         </div>
         <div class="tcard full">
-          <div class="who"><img src="https://i.pravatar.cc/100?img=51" alt=""><div><div class="nm">Lorenzo D.</div><div class="ro">Customer</div></div></div>
+          <div class="who"><img src="https://i.pravatar.cc/100?img=51" alt=""><div><div class="nm">Lorenzo D.</div><div class="ro">Abraka</div></div></div>
           <p>Amazing experience — food arrived quickly and delicious, and the rider even included a couple of complimentary drinks.</p>
         </div>
       </div>
-      <div style="text-align:center;margin-top:28px"><a class="eyebrow" href="#" style="color:var(--green-mid)">View more ⌄</a></div>
+      <div style="text-align:center;margin-top:28px"><a class="eyebrow" href="#" style="color:var(--green-mid)">View more</a></div>
     </div>
   </section>
 
@@ -323,7 +320,7 @@
     <div class="download">
       <div class="wrap dl-grid">
         <div class="dl-text">
-          <div class="badge">🛵</div>
+          <div class="badge">H</div>
           <h2>Download now<br>on your mobile</h2>
           <p style="color:rgba(255,255,255,.9);margin:14px 0 24px;max-width:360px">Order, track and reorder in seconds. Hyperlocal runs on iOS &amp; Android.</p>
           <a class="btn btn-white" href="#">Download Now</a>
@@ -338,9 +335,9 @@
     <div class="wrap">
       <div class="foot-grid">
         <div>
-          <div class="logo"><span class="mark">🛵</span> Hyperlocal</div>
-          <p style="font-size:14px;max-width:300px">Hyperlocal is a food delivery platform connecting you with the best kitchens in your neighbourhood.</p>
-          <div class="socials"><span>𝕏</span><span>f</span><span>ⓘ</span><span>in</span></div>
+          <div class="logo"><span class="mark">H</span> Hyperlocal</div>
+          <p style="font-size:14px;max-width:300px">Hyperlocal connects you to the best restaurants in Abraka and Warri — real menus, real prices, real delivery.</p>
+          <div class="socials"><span>X</span><span>f</span><span>IG</span><span>in</span></div>
         </div>
         <div>
           <h5>Navigate</h5>
