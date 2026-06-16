@@ -165,7 +165,7 @@
           <a href="#feedback">Feedback</a>
           <a href="#download">Get the App</a>
         </div>
-        <a class="btn btn-dark" href="#download">Log in</a>
+        <a class="btn btn-dark" href="/dashboard">Log in</a>
       </nav>
 
       <div class="hero-head">
