@@ -74,8 +74,8 @@
       border-radius:30px;color:#fff;margin:18px;padding-bottom:0;position:relative;overflow:hidden}
     nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
     .logo{display:inline-flex;align-items:center}
-    .logo img{display:block;height:30px;width:auto}
-    .logo-chip{background:#fff;border-radius:12px;padding:7px 12px;display:inline-flex;align-items:center;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+    .logo img{display:block;height:44px;width:auto}
+    .logo-chip{background:#fff;border-radius:14px;padding:8px 16px;display:inline-flex;align-items:center;box-shadow:0 6px 16px rgba(0,0,0,.12)}
     .nav-links{display:flex;gap:28px;font-weight:600;font-size:14px;color:rgba(255,255,255,.9)}
     .nav-links a:hover{color:#fff;text-decoration:underline}
     .hero-head{text-align:center;max-width:640px;margin:26px auto 0}
