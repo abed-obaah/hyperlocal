@@ -73,8 +73,9 @@
         radial-gradient(135% 95% at 75% -18%, #237e57 0%, var(--green) 52%, var(--green-deep) 120%);
       border-radius:30px;color:#fff;margin:18px;padding-bottom:0;position:relative;overflow:hidden}
     nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
-    .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:#fff}
-    .logo .mark{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:17px;font-weight:800}
+    .logo{display:inline-flex;align-items:center}
+    .logo img{display:block;height:30px;width:auto}
+    .logo-chip{background:#fff;border-radius:12px;padding:7px 12px;display:inline-flex;align-items:center;box-shadow:0 6px 16px rgba(0,0,0,.12)}
     .nav-links{display:flex;gap:28px;font-weight:600;font-size:14px;color:rgba(255,255,255,.9)}
     .nav-links a:hover{color:#fff;text-decoration:underline}
     .hero-head{text-align:center;max-width:640px;margin:26px auto 0}
@@ -158,7 +159,7 @@
   <header class="hero">
     <div class="wrap">
       <nav>
-        <div class="logo"><span class="mark">H</span> Hyperlocal</div>
+        <div class="logo logo-chip"><img src="/logo.png" alt="Hyperlocal" /></div>
         <div class="nav-links">
           <a href="#menus">Popular Menus</a>
           <a href="#track">Track Order</a>
@@ -335,7 +336,7 @@
     <div class="wrap">
       <div class="foot-grid">
         <div>
-          <div class="logo"><span class="mark">H</span> Hyperlocal</div>
+          <div class="logo logo-chip" style="margin-bottom:14px"><img src="/logo.png" alt="Hyperlocal" /></div>
           <p style="font-size:14px;max-width:300px">Hyperlocal connects you to the best restaurants in Abraka and Warri — real menus, real prices, real delivery.</p>
           <div class="socials"><span>X</span><span>f</span><span>IG</span><span>in</span></div>
         </div>
