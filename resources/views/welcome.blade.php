@@ -63,7 +63,13 @@
     .map-top{position:absolute;left:12px;right:12px;top:30px;background:#fff;border-radius:12px;padding:8px 12px;font-size:11px;font-weight:800;box-shadow:0 8px 18px rgba(0,0,0,.1);display:flex;align-items:center;gap:8px}
 
     /* ---------- Hero ---------- */
-    .hero{background:radial-gradient(120% 85% at 78% -10%,#1f7a52 0%,var(--green) 55%,var(--green-deep) 100%);border-radius:30px;color:#fff;margin:18px;padding-bottom:80px;position:relative;overflow:hidden}
+    .hero{
+      background:
+        radial-gradient(58% 46% at 50% 116%, rgba(255,255,255,.14), transparent 70%),
+        radial-gradient(48% 55% at 4% 54%, rgba(255,255,255,.08), transparent 60%),
+        radial-gradient(48% 55% at 96% 46%, rgba(255,255,255,.06), transparent 60%),
+        radial-gradient(135% 95% at 75% -18%, #237e57 0%, var(--green) 52%, var(--green-deep) 120%);
+      border-radius:30px;color:#fff;margin:18px;padding-bottom:0;position:relative;overflow:hidden}
     nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
     .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:#fff}
     .logo .mark{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:18px}
@@ -73,9 +79,11 @@
     .hero-head h1{font-size:54px;line-height:1.04;font-weight:800;letter-spacing:-1.5px}
     .hero-head p{margin:18px auto 26px;font-size:17px;color:rgba(255,255,255,.88);max-width:480px}
     .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-    .phones{display:flex;justify-content:center;align-items:flex-end;gap:24px;margin-top:54px}
-    .phones .p-a{transform:translateY(18px) rotate(-4deg)}
-    .phones .p-b{transform:rotate(4deg)}
+    /* Two phones overlapping, fanned apart, rising from the clipped bottom edge. */
+    .phones{display:flex;justify-content:center;align-items:flex-end;margin-top:40px;margin-bottom:-104px}
+    .phones .phone{width:222px}
+    .phones .p-a{transform:rotate(-9deg) translateY(14px);z-index:2;margin-right:-46px}
+    .phones .p-b{transform:rotate(9deg) translateY(-28px);z-index:1}
 
     /* ---------- Stats ---------- */
     .stats-wrap{margin:-46px 22px 0;position:relative;z-index:5}
@@ -137,7 +145,9 @@
       .feat-grid,.tgrid,.dl-grid,.foot-grid{grid-template-columns:1fr}
       .feat .order-text{order:2}
       .dl-img{height:240px;margin:0 14px 24px}
-      .phones{gap:8px}.phone{width:170px}
+      .phones{margin-bottom:-70px}
+      .phones .phone{width:158px}
+      .phones .p-a{margin-right:-32px}
     }
   </style>
 </head>
