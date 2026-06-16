@@ -10,10 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root{
-      --orange:#f3701e; --orange-2:#ff9347; --orange-deep:#e2620f;
-      --peach:#fde7d8; --peach-deep:#f9d3ba;
-      --dark:#1b1d2a; --ink:#20242e; --muted:#6f7682;
-      --page:#f4f3f1; --white:#fff;
+      /* Palette matched to the mobile app (tailwind primary scale) */
+      --green:#0B3D2E; --green-mid:#137A4F; --green-bright:#2E8B62; --green-deep:#06251C;
+      --soft:#E8F1EC; --soft-2:#C5DDD2;
+      --dark:#06251C; --ink:#16201B; --muted:#5C6B63;
+      --page:#F4F5F7; --white:#fff;
     }
     *{box-sizing:border-box;margin:0;padding:0}
     html{scroll-behavior:smooth}
@@ -22,14 +23,14 @@
     img{display:block;max-width:100%}
     .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
     .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;border-radius:999px;padding:14px 26px;font-size:15px;border:none;cursor:pointer;transition:.18s}
-    .btn-white{background:#fff;color:var(--orange-deep)}
+    .btn-white{background:#fff;color:var(--green)}
     .btn-white:hover{transform:translateY(-1px)}
     .btn-ghost{background:transparent;border:1.6px solid rgba(255,255,255,.55);color:#fff}
     .btn-ghost:hover{background:rgba(255,255,255,.12)}
-    .btn-orange{background:var(--orange);color:#fff}
-    .btn-orange:hover{background:var(--orange-deep)}
-    .btn-dark{background:var(--dark);color:#fff}
-    .eyebrow{color:var(--orange);font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase}
+    .btn-green{background:var(--green);color:#fff}
+    .btn-green:hover{background:#0F5F3D}
+    .btn-dark{background:var(--green-deep);color:#fff}
+    .eyebrow{color:var(--green-mid);font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase}
 
     /* ---------- Phone mockup ---------- */
     .phone{width:212px;background:#14151d;border-radius:34px;padding:9px;box-shadow:0 30px 60px rgba(0,0,0,.30);position:relative}
@@ -38,18 +39,18 @@
     .scr-pad{padding:26px 14px 14px}
     .scr-top{display:flex;justify-content:space-between;font-size:10px;color:#8a8f98;font-weight:700;margin-bottom:10px}
     .search{background:#f1f2f4;border-radius:12px;height:34px;display:flex;align-items:center;padding:0 12px;color:#9aa0a8;font-size:11px;gap:6px}
-    .promo{margin-top:12px;background:linear-gradient(120deg,var(--orange-2),var(--orange));border-radius:16px;padding:14px;color:#fff;position:relative;overflow:hidden}
+    .promo{margin-top:12px;background:linear-gradient(120deg,var(--green-bright),var(--green));border-radius:16px;padding:14px;color:#fff;position:relative;overflow:hidden}
     .promo h5{font-size:14px;font-weight:800;line-height:1.2}
-    .promo .chip{display:inline-block;margin-top:10px;background:#fff;color:var(--orange-deep);font-size:10px;font-weight:800;border-radius:99px;padding:5px 10px}
+    .promo .chip{display:inline-block;margin-top:10px;background:#fff;color:var(--green);font-size:10px;font-weight:800;border-radius:99px;padding:5px 10px}
     .promo .ph-food{position:absolute;right:-6px;bottom:-6px;width:74px;height:74px;border-radius:16px;background:#fff3 center/cover;border:3px solid #ffffff55}
     .cats{display:flex;justify-content:space-between;margin:14px 2px}
     .cats div{width:42px;text-align:center;font-size:10px;color:#6f7682}
-    .cats .ic{width:42px;height:42px;border-radius:14px;background:#fff3e9;display:grid;place-items:center;font-size:18px;margin-bottom:4px}
+    .cats .ic{width:42px;height:42px;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:18px;margin-bottom:4px}
     .scr-label{font-size:12px;font-weight:800;margin:4px 2px 8px}
     .fitem{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #f0f1f3;border-radius:14px;padding:8px;margin-bottom:8px}
     .fitem .t{width:44px;height:44px;border-radius:10px;background:#e9eef0 center/cover}
     .fitem .nm{font-size:11px;font-weight:800}
-    .fitem .pr{font-size:11px;color:var(--orange);font-weight:800}
+    .fitem .pr{font-size:11px;color:var(--green-mid);font-weight:800}
     /* map phone */
     .map{position:absolute;inset:0;background:
         repeating-linear-gradient(0deg,#eef1f3 0 1px,transparent 1px 26px),
@@ -62,10 +63,10 @@
     .map-top{position:absolute;left:12px;right:12px;top:30px;background:#fff;border-radius:12px;padding:8px 12px;font-size:11px;font-weight:800;box-shadow:0 8px 18px rgba(0,0,0,.1);display:flex;align-items:center;gap:8px}
 
     /* ---------- Hero ---------- */
-    .hero{background:radial-gradient(120% 80% at 80% -10%,#ff9d57 0%,var(--orange) 50%,var(--orange-deep) 100%);border-radius:30px;color:#fff;margin:18px;padding-bottom:80px;position:relative;overflow:hidden}
+    .hero{background:radial-gradient(120% 85% at 78% -10%,#1f7a52 0%,var(--green) 55%,var(--green-deep) 100%);border-radius:30px;color:#fff;margin:18px;padding-bottom:80px;position:relative;overflow:hidden}
     nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
     .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:#fff}
-    .logo .mark{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--orange);display:grid;place-items:center;font-size:18px}
+    .logo .mark{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:18px}
     .nav-links{display:flex;gap:28px;font-weight:600;font-size:14px;color:rgba(255,255,255,.9)}
     .nav-links a:hover{color:#fff;text-decoration:underline}
     .hero-head{text-align:center;max-width:620px;margin:26px auto 0}
@@ -79,7 +80,7 @@
     /* ---------- Stats ---------- */
     .stats-wrap{margin:-46px 22px 0;position:relative;z-index:5}
     .stats{max-width:1000px;margin:0 auto;background:var(--dark);border-radius:20px;display:grid;grid-template-columns:repeat(4,1fr);padding:26px 18px;box-shadow:0 24px 50px rgba(0,0,0,.18)}
-    .stat{text-align:center;color:#fff;border-right:1px solid rgba(255,255,255,.1)}
+    .stat{text-align:center;color:#fff;border-right:1px solid rgba(255,255,255,.12)}
     .stat:last-child{border-right:none}
     .stat .n{font-size:28px;font-weight:800}
     .stat .l{font-size:12px;color:rgba(255,255,255,.6)}
@@ -90,7 +91,7 @@
     .feat h2{font-size:36px;font-weight:800;letter-spacing:-1px;margin:12px 0 16px}
     .feat p{color:var(--muted);font-size:15px}
     .blob{position:relative;display:flex;justify-content:center}
-    .blob::before{content:"";position:absolute;width:280px;height:300px;background:linear-gradient(150deg,var(--orange-2),var(--orange));border-radius:40px 40px 44px 44px;transform:rotate(-3deg);box-shadow:0 24px 50px rgba(243,112,30,.3)}
+    .blob::before{content:"";position:absolute;width:280px;height:300px;background:linear-gradient(150deg,var(--green-bright),var(--green-mid));border-radius:40px 40px 44px 44px;transform:rotate(-3deg);box-shadow:0 24px 50px rgba(11,61,46,.30)}
     .blob .phone{position:relative;z-index:2}
     .spark{position:absolute;z-index:3;color:#fff;font-size:22px;opacity:.9}
 
@@ -99,8 +100,8 @@
     .tcenter h2{font-size:36px;font-weight:800;letter-spacing:-1px;margin-top:8px}
     .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
     .tcard{border-radius:20px;padding:24px}
-    .tcard.full{background:linear-gradient(135deg,var(--orange-2),var(--orange));color:#fff}
-    .tcard.soft{background:var(--peach);color:var(--ink)}
+    .tcard.full{background:linear-gradient(135deg,var(--green-mid),var(--green));color:#fff}
+    .tcard.soft{background:var(--soft);color:var(--ink)}
     .tcard .who{display:flex;align-items:center;gap:12px;margin-bottom:12px}
     .tcard .who img{width:44px;height:44px;border-radius:50%;background:#fff}
     .tcard .nm{font-weight:800;font-size:15px}
@@ -110,12 +111,12 @@
     .tcard.soft p{color:var(--muted)}
 
     /* ---------- Download CTA ---------- */
-    .download{margin:0 22px;background:radial-gradient(120% 120% at 90% 10%,#ff9d57,var(--orange) 60%,var(--orange-deep));border-radius:30px;color:#fff;overflow:hidden}
+    .download{margin:0 22px;background:radial-gradient(120% 120% at 90% 10%,#2E8B62,var(--green) 60%,var(--green-deep));border-radius:30px;color:#fff;overflow:hidden}
     .dl-grid{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:20px}
     .dl-text{padding:60px 0 60px 14px}
-    .dl-text .badge{width:54px;height:54px;border-radius:16px;background:#fff;color:var(--orange);display:grid;place-items:center;font-size:26px;margin-bottom:18px}
+    .dl-text .badge{width:54px;height:54px;border-radius:16px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:26px;margin-bottom:18px}
     .dl-text h2{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.05}
-    .dl-img{height:340px;background:#e9620f center/cover;border-radius:24px}
+    .dl-img{height:340px;background:#0F5F3D center/cover;border-radius:24px}
 
     /* ---------- Footer ---------- */
     footer{background:var(--dark);color:rgba(255,255,255,.7);margin:60px 18px 18px;border-radius:24px;padding:54px 0 26px}
@@ -123,7 +124,7 @@
     footer .logo{margin-bottom:14px}
     footer h5{color:#fff;font-weight:800;font-size:14px;margin-bottom:14px}
     footer a{display:block;font-size:14px;margin-bottom:9px;color:rgba(255,255,255,.65)}
-    footer a:hover{color:var(--orange-2)}
+    footer a:hover{color:var(--green-bright)}
     .socials{display:flex;gap:10px;margin-top:16px}
     .socials span{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:15px}
     .foot-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:36px;padding-top:20px;display:flex;justify-content:space-between;font-size:13px;flex-wrap:wrap;gap:10px}
@@ -196,7 +197,7 @@
           <div class="screen">
             <div class="map">
               <svg class="route" viewBox="0 0 200 400" preserveAspectRatio="none">
-                <path d="M40 300 C 90 250, 70 160, 150 110" fill="none" stroke="#f3701e" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>
+                <path d="M40 300 C 90 250, 70 160, 150 110" fill="none" stroke="#137A4F" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>
               </svg>
               <span class="pin" style="left:30px;top:282px">📍</span>
               <span class="pin" style="left:140px;top:88px">🛵</span>
@@ -243,7 +244,7 @@
         <span class="eyebrow">Popular menus</span>
         <h2>Popular menus near you</h2>
         <p>Discover trending dishes from neighbourhood kitchens — burgers, jollof, wood-fired pizza, fresh bowls and more. Every meal is made to order with fresh, locally-sourced ingredients and delivered while it's still hot.</p>
-        <div style="margin-top:24px"><a class="btn btn-orange" href="#download">Explore the menu →</a></div>
+        <div style="margin-top:24px"><a class="btn btn-green" href="#download">Explore the menu →</a></div>
       </div>
     </div>
   </section>
@@ -255,7 +256,7 @@
         <span class="eyebrow">Order tracking</span>
         <h2>Track your order in real time</h2>
         <p>From the moment a kitchen accepts your order to the second your rider pulls up, watch every step live on the map. Get notified at each stage — preparing, on the way, and delivered — so you always know exactly when to expect your food.</p>
-        <div style="margin-top:24px"><a class="btn btn-orange" href="#download">See how it works →</a></div>
+        <div style="margin-top:24px"><a class="btn btn-green" href="#download">See how it works →</a></div>
       </div>
       <div class="blob">
         <span class="spark" style="left:24px;bottom:50px">✦</span>
@@ -265,7 +266,7 @@
           <div class="screen">
             <div class="map">
               <svg class="route" viewBox="0 0 200 400" preserveAspectRatio="none">
-                <path d="M40 300 C 90 250, 70 160, 150 110" fill="none" stroke="#f3701e" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>
+                <path d="M40 300 C 90 250, 70 160, 150 110" fill="none" stroke="#137A4F" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>
               </svg>
               <span class="pin" style="left:30px;top:282px">🏠</span>
               <span class="pin" style="left:140px;top:88px">🛵</span>
@@ -303,7 +304,7 @@
           <p>Amazing experience — food arrived quickly and delicious, and the rider even included a couple of complimentary drinks.</p>
         </div>
       </div>
-      <div style="text-align:center;margin-top:28px"><a class="eyebrow" href="#" style="color:var(--orange)">View more ⌄</a></div>
+      <div style="text-align:center;margin-top:28px"><a class="eyebrow" href="#" style="color:var(--green-mid)">View more ⌄</a></div>
     </div>
   </section>
 
