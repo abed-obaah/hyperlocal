@@ -29,8 +29,8 @@ class AuthController extends Controller
             'phone' => $data['phone'] ?? null,
             'role' => 'customer',
             'avatar' => 'https://i.pravatar.cc/200?u='.urlencode($data['email']),
-            // Every new customer gets a wallet with a small welcome credit.
-            'wallet_balance' => 10.00,
+            // Every new customer gets a empty wallet by default.
+            'wallet_balance' => 0.00,
         ]);
 
         return response()->json([
