@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Restaurant;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class RestaurantDashboardController extends Controller
@@ -49,11 +50,10 @@ class RestaurantDashboardController extends Controller
     public function accept(Request $request, Order $order)
     {
         $this->authorizeOrder($request, $order);
-        // Accepting an order moves it straight into "preparing" so the customer
-        // app immediately shows "Preparing food". The restaurant then controls
-        // the remaining steps (ready → rider pickup → delivered).
-        $order->update(['status' => 'preparing', 'accepted_at' => now()]);
-        $order->notifyCustomer('Order accepted', "{$order->restaurant->name} is preparing your food.", 'restaurant');
+        // Accept and "preparing" are two distinct steps: accepting confirms the
+        // order, then the restaurant separately taps "preparing" once cooking starts.
+        $order->update(['status' => 'accepted', 'accepted_at' => now()]);
+        $order->notifyCustomer('Order accepted', "{$order->restaurant->name} accepted your order.", 'restaurant');
 
         return new OrderResource($order->load(['items', 'rider']));
     }
@@ -63,13 +63,24 @@ class RestaurantDashboardController extends Controller
         $this->authorizeOrder($request, $order);
         $data = $request->validate(['reason' => 'nullable|string|max:255']);
 
+        $wasPaid = $order->payment_status === 'paid';
         $order->update([
             'status' => 'rejected',
             'rejected_reason' => $data['reason'] ?? 'Restaurant unavailable',
-            // Paid orders are flagged for an admin refund.
-            'payment_status' => $order->payment_status === 'paid' ? 'refund_pending' : $order->payment_status,
+            // Paid orders are refunded straight to the customer's wallet.
+            'payment_status' => $wasPaid ? 'refunded' : $order->payment_status,
         ]);
-        $order->notifyCustomer('Order declined', $order->rejected_reason, 'close-circle');
+
+        if ($wasPaid) {
+            $order->customer?->creditWallet((float) $order->total, 'order_refund', $order);
+            $order->notifyCustomer(
+                'Order declined',
+                $order->rejected_reason.' ₦'.number_format($order->total, 2).' has been refunded to your wallet.',
+                'close-circle',
+            );
+        } else {
+            $order->notifyCustomer('Order declined', $order->rejected_reason, 'close-circle');
+        }
 
         return new OrderResource($order->load(['items', 'rider']));
     }
@@ -78,6 +89,7 @@ class RestaurantDashboardController extends Controller
     {
         $this->authorizeOrder($request, $order);
         $order->update(['status' => 'preparing']);
+        $order->notifyCustomer('Preparing your food', "{$order->restaurant->name} is preparing your order.", 'restaurant');
 
         return new OrderResource($order->load(['items', 'rider']));
     }
@@ -87,6 +99,15 @@ class RestaurantDashboardController extends Controller
         $this->authorizeOrder($request, $order);
         $order->update(['status' => 'ready', 'ready_at' => now()]);
         $order->notifyCustomer('Order ready', 'Your order is ready and waiting for a rider.', 'bag-check');
+
+        // Tell every admin a package is ready so they can assign a rider.
+        User::where('role', 'admin')->get()->each(fn (User $admin) => $admin->notifyApp(
+            'Package ready',
+            "{$order->restaurant->name} has {$order->order_number} ready for pickup.",
+            'bag-check',
+            $order->notificationData(),
+            'admin',
+        ));
 
         return new OrderResource($order->load(['items', 'rider']));
     }

@@ -108,9 +108,50 @@ class AdminController extends Controller
 
         $delivery = Delivery::updateOrCreate(
             ['order_id' => $order->id],
-            ['rider_id' => $data['riderId'], 'status' => 'assigned', 'assigned_at' => now(), 'amount' => 800],
+            [
+                'rider_id' => $data['riderId'],
+                'status' => 'assigned',
+                'assigned_at' => now(),
+                'amount' => config('hyperlocal.rider_fee'),
+            ],
         );
         $order->update(['rider_id' => $data['riderId'], 'status' => 'rider_assigned']);
+
+        // Notify the assigned rider that a package is ready for them.
+        User::find($data['riderId'])?->notifyApp(
+            'New delivery assigned',
+            "{$order->restaurant?->name} · {$order->order_number} is ready for pickup.",
+            'bicycle',
+            $order->notificationData(),
+            'delivery',
+        );
+
+        return new OrderResource($order->load(['items', 'restaurant', 'rider']));
+    }
+
+    /**
+     * Admin completes a delivered order: releases the flat fee to the rider's
+     * wallet (with an audit row) and notifies them. Idempotent — a delivery that
+     * has already been paid out is left untouched.
+     */
+    public function complete(Request $request, Order $order)
+    {
+        abort_unless($order->status === 'delivered', 422, 'Order is not delivered yet.');
+
+        $delivery = $order->delivery;
+        if ($delivery && $delivery->status !== 'completed' && $delivery->rider) {
+            $delivery->rider->creditWallet((float) $delivery->amount, 'rider_payout', $order);
+            $delivery->update(['status' => 'completed', 'paid_out_at' => now()]);
+            $delivery->rider->notifyApp(
+                'Payout received',
+                '₦'.number_format((float) $delivery->amount, 2)." added to your wallet for {$order->order_number}.",
+                'cash',
+                $order->notificationData(),
+                'payout',
+            );
+        }
+
+        $order->update(['completed_at' => now()]);
 
         return new OrderResource($order->load(['items', 'restaurant', 'rider']));
     }
@@ -119,7 +160,8 @@ class AdminController extends Controller
     public function riders()
     {
         return User::where('role', 'rider')->get()->map(function ($r) {
-            $delivered = Delivery::where('rider_id', $r->id)->where('status', 'delivered');
+            $finished = Delivery::where('rider_id', $r->id)->whereIn('status', ['delivered', 'completed']);
+            $paid = Delivery::where('rider_id', $r->id)->where('status', 'completed');
             $active = Delivery::where('rider_id', $r->id)
                 ->whereIn('status', ['assigned', 'accepted', 'picked_up', 'on_the_way'])
                 ->with('order')
@@ -133,9 +175,9 @@ class AdminController extends Controller
                 'phone' => $r->phone,
                 'photo' => $r->avatar,
                 'isAvailable' => (bool) $r->is_available,
-                'completedDeliveries' => (clone $delivered)->count(),
-                'todayDeliveries' => (clone $delivered)->whereDate('delivered_at', today())->count(),
-                'totalEarnings' => round((clone $delivered)->sum('amount'), 2),
+                'completedDeliveries' => (clone $finished)->count(),
+                'todayDeliveries' => (clone $finished)->whereDate('delivered_at', today())->count(),
+                'totalEarnings' => round((clone $paid)->sum('amount'), 2),
                 'walletBalance' => (float) $r->wallet_balance,
                 'activeOrder' => $active?->order?->order_number,
             ];
@@ -196,12 +238,23 @@ class AdminController extends Controller
     {
         $data = $request->validate(['reason' => 'nullable|string|max:255']);
 
+        $wasPaid = $order->payment_status === 'paid';
         $order->update([
             'status' => 'cancelled',
             'rejected_reason' => $data['reason'] ?? 'Cancelled by admin',
-            'payment_status' => $order->payment_status === 'paid' ? 'refund_pending' : $order->payment_status,
+            'payment_status' => $wasPaid ? 'refunded' : $order->payment_status,
         ]);
-        $order->notifyCustomer('Order cancelled', $order->rejected_reason, 'close-circle');
+
+        if ($wasPaid) {
+            $order->customer?->creditWallet((float) $order->total, 'order_refund', $order);
+            $order->notifyCustomer(
+                'Order cancelled',
+                $order->rejected_reason.' ₦'.number_format($order->total, 2).' has been refunded to your wallet.',
+                'close-circle',
+            );
+        } else {
+            $order->notifyCustomer('Order cancelled', $order->rejected_reason, 'close-circle');
+        }
 
         return new OrderResource($order->load(['items', 'restaurant', 'rider']));
     }
@@ -245,19 +298,31 @@ class AdminController extends Controller
     /** Platform revenue + activity overview. */
     public function revenue()
     {
-        $completed = Order::whereNotIn('status', ['rejected', 'cancelled']);
+        // Orders that count toward revenue (exclude rejected/cancelled).
+        $active = Order::whereNotIn('status', ['rejected', 'cancelled']);
+
+        $deliveryFees = round((clone $active)->sum('delivery_fee'), 2);
+        $commission = round((clone $active)->sum('commission'), 2);
+        // Rider payouts that have actually been released (admin-completed orders).
+        $riderPayouts = round(Delivery::where('status', 'completed')->sum('amount'), 2);
+        // What the platform keeps on delivery after paying riders.
+        $deliveryMargin = round($deliveryFees - $riderPayouts, 2);
 
         return response()->json([
-            'totalRevenue' => round((clone $completed)->sum('total'), 2),
-            'deliveryFees' => round((clone $completed)->sum('delivery_fee'), 2),
-            'todayRevenue' => round((clone $completed)->whereDate('created_at', today())->sum('total'), 2),
+            'totalRevenue' => round((clone $active)->sum('total'), 2),
+            'deliveryFees' => $deliveryFees,
+            'todayRevenue' => round((clone $active)->whereDate('created_at', today())->sum('total'), 2),
+            'commission' => $commission,
+            'deliveryMargin' => $deliveryMargin,
+            'riderPayouts' => $riderPayouts,
+            // Platform's take: food commission + delivery margin.
+            'platformEarnings' => round($commission + $deliveryMargin, 2),
             'totalOrders' => Order::count(),
             'liveOrders' => Order::whereIn('status', ['placed', 'accepted', 'preparing', 'ready', 'rider_assigned', 'picked_up', 'on_the_way'])->count(),
             'restaurants' => Restaurant::count(),
             'riders' => User::where('role', 'rider')->count(),
             'customers' => User::where('role', 'customer')->count(),
             'openComplaints' => Complaint::where('status', 'open')->count(),
-            'riderPayouts' => round(Delivery::where('status', 'delivered')->sum('amount'), 2),
         ]);
     }
 }
