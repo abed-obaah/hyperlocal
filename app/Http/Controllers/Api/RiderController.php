@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DeliveryResource;
 use App\Models\Delivery;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class RiderController extends Controller
@@ -23,11 +24,23 @@ class RiderController extends Controller
         return response()->json(['isAvailable' => (bool) $user->is_available]);
     }
 
-    /** Active delivery requests assigned to this rider. */
+    /** Deliveries this rider has accepted and is actively working. */
     public function deliveries(Request $request)
     {
         $deliveries = $request->user()->deliveries()
-            ->whereIn('status', ['assigned', 'accepted', 'picked_up', 'on_the_way'])
+            ->whereIn('status', ['accepted', 'picked_up', 'on_the_way'])
+            ->with(['order.items', 'order.restaurant'])
+            ->latest()
+            ->get();
+
+        return DeliveryResource::collection($deliveries);
+    }
+
+    /** New assignments awaiting this rider's accept/decline. */
+    public function assignments(Request $request)
+    {
+        $deliveries = $request->user()->deliveries()
+            ->where('status', 'assigned')
             ->with(['order.items', 'order.restaurant'])
             ->latest()
             ->get();
@@ -54,33 +67,59 @@ class RiderController extends Controller
         return response()->json(['message' => 'Declined']);
     }
 
-    /** Rider confirms pickup → customer sees "on the way". */
+    /** Rider confirms pickup at the restaurant. */
     public function pickup(Request $request, Delivery $delivery)
     {
         $this->authorizeDelivery($request, $delivery);
         $delivery->update(['status' => 'picked_up', 'picked_up_at' => now()]);
-        $delivery->order?->update(['status' => 'on_the_way', 'picked_up_at' => now()]);
+        $delivery->order?->update(['status' => 'picked_up', 'picked_up_at' => now()]);
+        $delivery->order?->notifyCustomer('Order picked up', 'Your rider has picked up your order.', 'bicycle');
 
         return new DeliveryResource($delivery->load(['order.items', 'order.restaurant']));
     }
 
-    /** Rider marks delivered → earns ₦800. */
+    /** Rider is en route to the customer. */
+    public function onTheWay(Request $request, Delivery $delivery)
+    {
+        $this->authorizeDelivery($request, $delivery);
+        $delivery->update(['status' => 'on_the_way']);
+        $delivery->order?->update(['status' => 'on_the_way']);
+        $delivery->order?->notifyCustomer('On the way', 'Your order is on the way!', 'navigate');
+
+        return new DeliveryResource($delivery->load(['order.items', 'order.restaurant']));
+    }
+
+    /**
+     * Rider marks the order delivered. The payout is NOT credited here — an admin
+     * pays the rider out when they "complete" the order (see AdminController::complete).
+     */
     public function deliver(Request $request, Delivery $delivery)
     {
         $this->authorizeDelivery($request, $delivery);
         $delivery->update(['status' => 'delivered', 'delivered_at' => now()]);
-        $delivery->order?->update(['status' => 'delivered', 'delivered_at' => now()]);
+        $order = $delivery->order;
+        $order?->update(['status' => 'delivered', 'delivered_at' => now()]);
+        $order?->notifyCustomer('Delivered', 'Your order has been delivered. Enjoy!', 'checkmark-circle');
 
-        // Credit the flat delivery fee to the rider's wallet.
-        $request->user()->increment('wallet_balance', $delivery->amount);
+        // Let admins know it's ready to be completed (which releases the rider payout).
+        if ($order) {
+            User::where('role', 'admin')->get()->each(fn (User $admin) => $admin->notifyApp(
+                'Order delivered',
+                "{$order->order_number} was delivered — complete it to pay the rider.",
+                'checkmark-circle',
+                $order->notificationData(),
+                'admin',
+            ));
+        }
 
         return new DeliveryResource($delivery->load(['order.items', 'order.restaurant']));
     }
 
     public function completed(Request $request)
     {
+        // Both delivered (awaiting payout) and completed (paid out) are finished jobs.
         $deliveries = $request->user()->deliveries()
-            ->where('status', 'delivered')
+            ->whereIn('status', ['delivered', 'completed'])
             ->with(['order.restaurant'])
             ->latest()
             ->get();
@@ -91,13 +130,16 @@ class RiderController extends Controller
     public function earnings(Request $request)
     {
         $user = $request->user();
-        $delivered = $user->deliveries()->where('status', 'delivered');
+        // Paid out = admin has completed the order. Delivered-but-not-completed is pending payout.
+        $paid = $user->deliveries()->where('status', 'completed');
+        $pending = $user->deliveries()->where('status', 'delivered');
 
         return response()->json([
-            'completedDeliveries' => (clone $delivered)->count(),
-            'perDelivery' => 800,
-            'todayEarnings' => round((clone $delivered)->whereDate('delivered_at', today())->sum('amount'), 2),
-            'totalEarnings' => round((clone $delivered)->sum('amount'), 2),
+            'completedDeliveries' => $user->deliveries()->whereIn('status', ['delivered', 'completed'])->count(),
+            'perDelivery' => (float) config('hyperlocal.rider_fee'),
+            'todayEarnings' => round((clone $paid)->whereDate('paid_out_at', today())->sum('amount'), 2),
+            'totalEarnings' => round((clone $paid)->sum('amount'), 2),
+            'pendingPayout' => round((clone $pending)->sum('amount'), 2),
             'walletBalance' => (float) $user->wallet_balance,
         ]);
     }

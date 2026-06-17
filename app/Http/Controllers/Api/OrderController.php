@@ -84,6 +84,8 @@ class OrderController extends Controller
         $taxable = max($subtotal - $discount, 0);
         $tax = round($taxable * 0.05, 2);
         $total = round($taxable + $deliveryFee + $tax, 2);
+        // Platform commission snapshot, taken on the (post-discount) food value.
+        $commission = round($taxable * (float) config('hyperlocal.commission_rate'), 2);
 
         $order = Order::create([
             'order_number' => '#'.(2387 + Order::count()),
@@ -98,6 +100,7 @@ class OrderController extends Controller
             'discount' => round($discount, 2),
             'tax' => $tax,
             'total' => $total,
+            'commission' => $commission,
             'eta_minutes' => $restaurant->eta_minutes,
             'placed_at' => now(),
         ]);

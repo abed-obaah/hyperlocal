@@ -41,4 +41,13 @@ class NotificationController extends Controller
 
         return response()->json(['ok' => true]);
     }
+
+    /** Store/refresh this device's Expo push token so we can push to it. */
+    public function registerDeviceToken(Request $request)
+    {
+        $data = $request->validate(['token' => 'required|string|max:255']);
+        $request->user()->update(['device_token' => $data['token']]);
+
+        return response()->json(['ok' => true]);
+    }
 }

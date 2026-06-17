@@ -9,8 +9,8 @@ class Order extends Model
     protected $fillable = [
         'order_number', 'customer_id', 'restaurant_id', 'rider_id', 'status',
         'payment_method', 'payment_status', 'address', 'subtotal', 'delivery_fee',
-        'discount', 'tax', 'total', 'eta_minutes', 'rejected_reason',
-        'placed_at', 'accepted_at', 'ready_at', 'picked_up_at', 'delivered_at',
+        'discount', 'tax', 'total', 'commission', 'eta_minutes', 'rejected_reason',
+        'placed_at', 'accepted_at', 'ready_at', 'picked_up_at', 'delivered_at', 'completed_at',
     ];
 
     protected function casts(): array
@@ -22,11 +22,13 @@ class Order extends Model
             'discount' => 'float',
             'tax' => 'float',
             'total' => 'float',
+            'commission' => 'float',
             'placed_at' => 'datetime',
             'accepted_at' => 'datetime',
             'ready_at' => 'datetime',
             'picked_up_at' => 'datetime',
             'delivered_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 
@@ -55,16 +57,15 @@ class Order extends Model
         return $this->hasOne(Delivery::class);
     }
 
-    /** Create an in-app notification for this order's customer. */
+    /** Notify this order's customer in-app and via push. */
     public function notifyCustomer(string $title, string $body, string $icon = 'notifications'): void
     {
-        UserNotification::create([
-            'user_id' => $this->customer_id,
-            'type' => 'order',
-            'title' => $title,
-            'body' => $body,
-            'icon' => $icon,
-            'data' => ['orderId' => (string) $this->id, 'restaurantId' => (string) $this->restaurant_id],
-        ]);
+        $this->customer?->notifyApp($title, $body, $icon, $this->notificationData());
+    }
+
+    /** Standard payload attached to every order notification. */
+    public function notificationData(): array
+    {
+        return ['orderId' => (string) $this->id, 'restaurantId' => (string) $this->restaurant_id];
     }
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RestaurantDashboardController;
 use App\Http\Controllers\Api\RestaurantMenuController;
 use App\Http\Controllers\Api\RiderController;
+use App\Http\Controllers\Api\UploadController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -47,6 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
 
+    // Image uploads (review photos, etc.)
+    Route::post('uploads', [UploadController::class, 'store']);
+
     // ---- Customer ----
     Route::get('orders', [OrderController::class, 'index']);
     Route::post('orders', [OrderController::class, 'store']);
@@ -65,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Notifications
     Route::get('notifications', [NotificationController::class, 'index']);
+    Route::post('notifications/device-token', [NotificationController::class, 'registerDeviceToken']);
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);
     Route::get('complaints', [ComplaintController::class, 'index']);
@@ -93,12 +98,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---- Rider app ----
     Route::prefix('rider')->middleware('role:rider')->group(function () {
         Route::post('availability', [RiderController::class, 'toggleAvailability']);
+        Route::get('assignments', [RiderController::class, 'assignments']);
         Route::get('deliveries', [RiderController::class, 'deliveries']);
         Route::get('deliveries/completed', [RiderController::class, 'completed']);
         Route::get('earnings', [RiderController::class, 'earnings']);
         Route::post('deliveries/{delivery}/accept', [RiderController::class, 'accept']);
         Route::post('deliveries/{delivery}/decline', [RiderController::class, 'decline']);
         Route::post('deliveries/{delivery}/pickup', [RiderController::class, 'pickup']);
+        Route::post('deliveries/{delivery}/on-the-way', [RiderController::class, 'onTheWay']);
         Route::post('deliveries/{delivery}/deliver', [RiderController::class, 'deliver']);
     });
 
@@ -110,6 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('riders/available', [AdminController::class, 'availableRiders']);
         Route::get('riders', [AdminController::class, 'riders']);
         Route::post('orders/{order}/assign', [AdminController::class, 'assignRider']);
+        Route::post('orders/{order}/complete', [AdminController::class, 'complete']);
         Route::post('orders/{order}/cancel', [AdminController::class, 'cancelOrder']);
         Route::get('payments', [AdminController::class, 'payments']);
         Route::post('orders/{order}/confirm-payment', [AdminController::class, 'confirmPayment']);
