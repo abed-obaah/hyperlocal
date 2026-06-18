@@ -143,6 +143,7 @@ class AuthController extends Controller
             'avatar' => $user->avatar,
             'role' => $user->role,
             'isAvailable' => (bool) $user->is_available,
+            'rider_status' => $user->rider_status,
             'walletBalance' => (float) $user->wallet_balance,
         ];
     }
