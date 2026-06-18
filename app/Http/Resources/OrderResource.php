@@ -28,6 +28,9 @@ class OrderResource extends JsonResource
             'restaurantId' => (string) $this->restaurant_id,
             'restaurantName' => $this->restaurant?->name,
             'restaurantLogo' => $this->restaurant?->logo,
+            'restaurantAddress' => $this->restaurant?->address,
+            'customerName' => $this->customer?->name,
+            'customerPhone' => $this->customer?->phone,
             'items' => $this->items->map(fn ($i) => [
                 'lineId' => (string) $i->id,
                 'menuItemId' => (string) $i->menu_item_id,
