@@ -8,7 +8,7 @@ class Delivery extends Model
 {
     protected $fillable = [
         'order_id', 'rider_id', 'status', 'amount',
-        'assigned_at', 'accepted_at', 'picked_up_at', 'delivered_at',
+        'assigned_at', 'accepted_at', 'picked_up_at', 'delivered_at', 'completed_at',
     ];
 
     protected function casts(): array
@@ -19,6 +19,7 @@ class Delivery extends Model
             'accepted_at' => 'datetime',
             'picked_up_at' => 'datetime',
             'delivered_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 
@@ -30,5 +31,10 @@ class Delivery extends Model
     public function rider()
     {
         return $this->belongsTo(User::class, 'rider_id');
+    }
+
+    public function earning()
+    {
+        return $this->hasOne(RiderEarning::class);
     }
 }

@@ -106,19 +106,24 @@ class AdminController extends Controller
     {
         $data = $request->validate(['riderId' => 'required|exists:users,id']);
 
+        $rider = User::findOrFail($data['riderId']);
+        abort_unless($rider->role === 'rider', 422, 'Selected user is not a rider.');
+        abort_unless($rider->is_active, 422, 'This rider account is inactive.');
+        abort_if($rider->rider_status === 'busy', 422, 'This rider is currently busy with another delivery.');
+
         $delivery = Delivery::updateOrCreate(
             ['order_id' => $order->id],
             [
                 'rider_id' => $data['riderId'],
                 'status' => 'assigned',
                 'assigned_at' => now(),
-                'amount' => config('hyperlocal.rider_fee'),
+                'amount' => config('hyperlocal.rider_fee', 800.00),
             ],
         );
         $order->update(['rider_id' => $data['riderId'], 'status' => 'rider_assigned']);
 
         // Notify the assigned rider that a package is ready for them.
-        User::find($data['riderId'])?->notifyApp(
+        $rider->notifyApp(
             'New delivery assigned',
             "{$order->restaurant?->name} · {$order->order_number} is ready for pickup.",
             'bicycle',
@@ -140,9 +145,39 @@ class AdminController extends Controller
 
         $delivery = $order->delivery;
         if ($delivery && $delivery->status !== 'completed' && $delivery->rider) {
-            $delivery->rider->creditWallet((float) $delivery->amount, 'rider_payout', $order);
-            $delivery->update(['status' => 'completed', 'paid_out_at' => now()]);
-            $delivery->rider->notifyApp(
+            $rider = $delivery->rider;
+            
+            // Check if already paid out in rider_earnings
+            $earning = \App\Models\RiderEarning::where('delivery_id', $delivery->id)->first();
+            if (!$earning || $earning->status !== 'paid') {
+                // Credit wallet
+                $rider->creditWallet((float) $delivery->amount, 'rider_payout', $order);
+                
+                if ($earning) {
+                    $earning->update(['status' => 'paid']);
+                } else {
+                    \App\Models\RiderEarning::create([
+                        'rider_id' => $rider->id,
+                        'delivery_id' => $delivery->id,
+                        'amount' => (float) $delivery->amount,
+                        'status' => 'paid',
+                    ]);
+                }
+            }
+
+            $delivery->update([
+                'status' => 'completed',
+                'paid_out_at' => now(),
+                'completed_at' => now(),
+            ]);
+
+            // Set rider back to available
+            $rider->update([
+                'rider_status' => 'available',
+                'is_available' => true,
+            ]);
+
+            $rider->notifyApp(
                 'Payout received',
                 '₦'.number_format((float) $delivery->amount, 2)." added to your wallet for {$order->order_number}.",
                 'cash',

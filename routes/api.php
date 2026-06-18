@@ -98,15 +98,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---- Rider app ----
     Route::prefix('rider')->middleware('role:rider')->group(function () {
         Route::post('availability', [RiderController::class, 'toggleAvailability']);
+        Route::patch('availability', [RiderController::class, 'toggleAvailability']);
         Route::get('assignments', [RiderController::class, 'assignments']);
         Route::get('deliveries', [RiderController::class, 'deliveries']);
         Route::get('deliveries/completed', [RiderController::class, 'completed']);
         Route::get('earnings', [RiderController::class, 'earnings']);
         Route::post('deliveries/{delivery}/accept', [RiderController::class, 'accept']);
+        Route::patch('deliveries/{delivery}/accept', [RiderController::class, 'accept']);
         Route::post('deliveries/{delivery}/decline', [RiderController::class, 'decline']);
+        Route::post('deliveries/{delivery}/arrive', [RiderController::class, 'arriveAtRestaurant']);
         Route::post('deliveries/{delivery}/pickup', [RiderController::class, 'pickup']);
         Route::post('deliveries/{delivery}/on-the-way', [RiderController::class, 'onTheWay']);
         Route::post('deliveries/{delivery}/deliver', [RiderController::class, 'deliver']);
+        Route::patch('deliveries/{delivery}/status', [RiderController::class, 'updateStatus']);
     });
 
     // ---- Admin dashboard ----

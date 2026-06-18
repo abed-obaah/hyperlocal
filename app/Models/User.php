@@ -15,7 +15,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'role', 'phone', 'avatar', 'is_available',
-        'wallet_balance', 'device_token',
+        'wallet_balance', 'device_token', 'rider_status',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -75,6 +75,11 @@ class User extends Authenticatable
     public function walletTransactions()
     {
         return $this->hasMany(WalletTransaction::class)->latest();
+    }
+
+    public function riderEarnings()
+    {
+        return $this->hasMany(RiderEarning::class, 'rider_id');
     }
 
     /**

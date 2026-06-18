@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\DeliveryResource;
 use App\Models\Delivery;
 use App\Models\User;
+use App\Models\RiderEarning;
 use Illuminate\Http\Request;
 
 class RiderController extends Controller
@@ -19,16 +20,23 @@ class RiderController extends Controller
     public function toggleAvailability(Request $request)
     {
         $user = $request->user();
-        $user->update(['is_available' => ! $user->is_available]);
+        if ($user->rider_status === 'busy') {
+            return response()->json(['error' => 'Cannot toggle availability while busy with a delivery.'], 422);
+        }
+        $newStatus = $user->rider_status === 'available' ? 'unavailable' : 'available';
+        $user->update([
+            'rider_status' => $newStatus,
+            'is_available' => $newStatus === 'available'
+        ]);
 
-        return response()->json(['isAvailable' => (bool) $user->is_available]);
+        return response()->json(['isAvailable' => $newStatus === 'available', 'status' => $newStatus]);
     }
 
     /** Deliveries this rider has accepted and is actively working. */
     public function deliveries(Request $request)
     {
         $deliveries = $request->user()->deliveries()
-            ->whereIn('status', ['accepted', 'picked_up', 'on_the_way'])
+            ->whereIn('status', ['accepted', 'arrived_at_restaurant', 'picked_up', 'on_the_way'])
             ->with(['order.items', 'order.restaurant'])
             ->latest()
             ->get();
@@ -51,8 +59,24 @@ class RiderController extends Controller
     public function accept(Request $request, Delivery $delivery)
     {
         $this->authorizeDelivery($request, $delivery);
+        abort_unless($delivery->status === 'assigned', 422, 'Delivery is not in assigned state.');
+        
+        $user = $request->user();
+        // Check if already busy
+        $hasActive = Delivery::where('rider_id', $user->id)
+            ->whereIn('status', ['accepted', 'arrived_at_restaurant', 'picked_up', 'on_the_way'])
+            ->exists();
+        if ($hasActive) {
+            return response()->json(['error' => 'You already have an active delivery.'], 422);
+        }
+
         $delivery->update(['status' => 'accepted', 'accepted_at' => now()]);
         $delivery->order?->update(['status' => 'rider_assigned']);
+
+        $user->update([
+            'rider_status' => 'busy',
+            'is_available' => false
+        ]);
 
         return new DeliveryResource($delivery->load(['order.items', 'order.restaurant']));
     }
@@ -60,17 +84,41 @@ class RiderController extends Controller
     public function decline(Request $request, Delivery $delivery)
     {
         $this->authorizeDelivery($request, $delivery);
-        // Release it back to the pool for the admin to reassign.
+        abort_unless($delivery->status === 'assigned', 422, 'You can only decline pending assignments.');
+
         $delivery->update(['status' => 'declined', 'rider_id' => null]);
         $delivery->order?->update(['status' => 'ready', 'rider_id' => null]);
 
+        $user = $request->user();
+        if ($user->rider_status === 'busy') {
+            $user->update([
+                'rider_status' => 'available',
+                'is_available' => true
+            ]);
+        }
+
         return response()->json(['message' => 'Declined']);
+    }
+
+    /** Rider confirms arrival at the restaurant. */
+    public function arriveAtRestaurant(Request $request, Delivery $delivery)
+    {
+        $this->authorizeDelivery($request, $delivery);
+        abort_unless($delivery->status === 'accepted', 422, 'Must accept delivery first.');
+
+        $delivery->update(['status' => 'arrived_at_restaurant']);
+        $delivery->order?->update(['status' => 'rider_arrived']);
+        $delivery->order?->notifyCustomer('Rider arrived', 'Your rider has arrived at the restaurant.', 'storefront');
+
+        return new DeliveryResource($delivery->load(['order.items', 'order.restaurant']));
     }
 
     /** Rider confirms pickup at the restaurant. */
     public function pickup(Request $request, Delivery $delivery)
     {
         $this->authorizeDelivery($request, $delivery);
+        abort_unless($delivery->status === 'arrived_at_restaurant', 422, 'Must arrive at restaurant first.');
+
         $delivery->update(['status' => 'picked_up', 'picked_up_at' => now()]);
         $delivery->order?->update(['status' => 'picked_up', 'picked_up_at' => now()]);
         $delivery->order?->notifyCustomer('Order picked up', 'Your rider has picked up your order.', 'bicycle');
@@ -82,6 +130,8 @@ class RiderController extends Controller
     public function onTheWay(Request $request, Delivery $delivery)
     {
         $this->authorizeDelivery($request, $delivery);
+        abort_unless($delivery->status === 'picked_up', 422, 'Must pick up order first.');
+
         $delivery->update(['status' => 'on_the_way']);
         $delivery->order?->update(['status' => 'on_the_way']);
         $delivery->order?->notifyCustomer('On the way', 'Your order is on the way!', 'navigate');
@@ -89,17 +139,26 @@ class RiderController extends Controller
         return new DeliveryResource($delivery->load(['order.items', 'order.restaurant']));
     }
 
-    /**
-     * Rider marks the order delivered. The payout is NOT credited here — an admin
-     * pays the rider out when they "complete" the order (see AdminController::complete).
-     */
+    /** Rider marks the order delivered. */
     public function deliver(Request $request, Delivery $delivery)
     {
         $this->authorizeDelivery($request, $delivery);
+        abort_unless($delivery->status === 'on_the_way', 422, 'Must be on the way first.');
+
         $delivery->update(['status' => 'delivered', 'delivered_at' => now()]);
         $order = $delivery->order;
         $order?->update(['status' => 'delivered', 'delivered_at' => now()]);
         $order?->notifyCustomer('Delivered', 'Your order has been delivered. Enjoy!', 'checkmark-circle');
+
+        // Create pending earning for this completed run
+        RiderEarning::firstOrCreate(
+            ['delivery_id' => $delivery->id],
+            [
+                'rider_id' => $request->user()->id,
+                'amount' => 800.00,
+                'status' => 'pending'
+            ]
+        );
 
         // Let admins know it's ready to be completed (which releases the rider payout).
         if ($order) {
@@ -117,7 +176,6 @@ class RiderController extends Controller
 
     public function completed(Request $request)
     {
-        // Both delivered (awaiting payout) and completed (paid out) are finished jobs.
         $deliveries = $request->user()->deliveries()
             ->whereIn('status', ['delivered', 'completed'])
             ->with(['order.restaurant'])
@@ -130,17 +188,47 @@ class RiderController extends Controller
     public function earnings(Request $request)
     {
         $user = $request->user();
-        // Paid out = admin has completed the order. Delivered-but-not-completed is pending payout.
-        $paid = $user->deliveries()->where('status', 'completed');
-        $pending = $user->deliveries()->where('status', 'delivered');
+        
+        $totalEarnings = (float) RiderEarning::where('rider_id', $user->id)->where('status', 'paid')->sum('amount');
+        $todayEarnings = (float) RiderEarning::where('rider_id', $user->id)->where('status', 'paid')->whereDate('created_at', today())->sum('amount');
+        $pendingPayout = (float) RiderEarning::where('rider_id', $user->id)->where('status', 'pending')->sum('amount');
+        $completedCount = RiderEarning::where('rider_id', $user->id)->count();
 
         return response()->json([
-            'completedDeliveries' => $user->deliveries()->whereIn('status', ['delivered', 'completed'])->count(),
-            'perDelivery' => (float) config('hyperlocal.rider_fee'),
-            'todayEarnings' => round((clone $paid)->whereDate('paid_out_at', today())->sum('amount'), 2),
-            'totalEarnings' => round((clone $paid)->sum('amount'), 2),
-            'pendingPayout' => round((clone $pending)->sum('amount'), 2),
+            'completedDeliveries' => $completedCount,
+            'perDelivery' => 800.00,
+            'todayEarnings' => $todayEarnings,
+            'totalEarnings' => $totalEarnings,
+            'pendingPayout' => $pendingPayout,
             'walletBalance' => (float) $user->wallet_balance,
         ]);
+    }
+
+    public function updateStatus(Request $request, Delivery $delivery)
+    {
+        $this->authorizeDelivery($request, $delivery);
+        $data = $request->validate([
+            'status' => 'required|string|in:accepted,arrived_at_restaurant,picked_up,on_the_way,delivered'
+        ]);
+
+        $nextStatus = $data['status'];
+
+        if ($nextStatus === 'accepted') {
+            return $this->accept($request, $delivery);
+        }
+        if ($nextStatus === 'arrived_at_restaurant') {
+            return $this->arriveAtRestaurant($request, $delivery);
+        }
+        if ($nextStatus === 'picked_up') {
+            return $this->pickup($request, $delivery);
+        }
+        if ($nextStatus === 'on_the_way') {
+            return $this->onTheWay($request, $delivery);
+        }
+        if ($nextStatus === 'delivered') {
+            return $this->deliver($request, $delivery);
+        }
+
+        return response()->json(['error' => 'Invalid status transition.'], 422);
     }
 }
