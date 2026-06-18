@@ -93,7 +93,7 @@ class AdminController extends Controller
 
     public function availableRiders()
     {
-        return User::where('role', 'rider')->where('is_available', true)->get()->map(fn ($r) => [
+        return User::where('role', 'rider')->where('rider_status', 'available')->get()->map(fn ($r) => [
             'id' => (string) $r->id,
             'name' => $r->name,
             'phone' => $r->phone,
@@ -108,8 +108,18 @@ class AdminController extends Controller
 
         $rider = User::findOrFail($data['riderId']);
         abort_unless($rider->role === 'rider', 422, 'Selected user is not a rider.');
-        abort_unless($rider->is_active, 422, 'This rider account is inactive.');
         abort_if($rider->rider_status === 'busy', 422, 'This rider is currently busy with another delivery.');
+
+        $previousRiderId = $order->rider_id;
+        if ($previousRiderId && $previousRiderId != $data['riderId']) {
+            $previousRider = User::find($previousRiderId);
+            if ($previousRider) {
+                $previousRider->update([
+                    'rider_status' => 'available',
+                    'is_available' => true,
+                ]);
+            }
+        }
 
         $delivery = Delivery::updateOrCreate(
             ['order_id' => $order->id],
@@ -247,6 +257,22 @@ class AdminController extends Controller
             'rejected_reason' => $data['reason'] ?? 'Cancelled by admin',
             'payment_status' => $wasPaid ? 'refund_pending' : $order->payment_status,
         ]);
+
+        if ($order->delivery) {
+            $order->delivery->update(['status' => 'cancelled']);
+        }
+        if ($order->rider) {
+            $hasOtherActive = Delivery::where('rider_id', $order->rider_id)
+                ->where('order_id', '!=', $order->id)
+                ->whereIn('status', ['accepted', 'arrived_at_restaurant', 'picked_up', 'on_the_way'])
+                ->exists();
+            if (!$hasOtherActive) {
+                $order->rider->update([
+                    'rider_status' => 'available',
+                    'is_available' => true,
+                ]);
+            }
+        }
 
         if ($wasPaid) {
             $order->notifyCustomer(

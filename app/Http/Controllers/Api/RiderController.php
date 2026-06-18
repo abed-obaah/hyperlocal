@@ -150,11 +150,18 @@ class RiderController extends Controller
         $order?->update(['status' => 'delivered', 'delivered_at' => now()]);
         $order?->notifyCustomer('Delivered', 'Your order has been delivered. Enjoy!', 'checkmark-circle');
 
+        // Set rider back to available immediately as they have finished the delivery
+        $user = $request->user();
+        $user->update([
+            'rider_status' => 'available',
+            'is_available' => true
+        ]);
+
         // Create pending earning for this completed run
         RiderEarning::firstOrCreate(
             ['delivery_id' => $delivery->id],
             [
-                'rider_id' => $request->user()->id,
+                'rider_id' => $user->id,
                 'amount' => 800.00,
                 'status' => 'pending'
             ]

@@ -100,11 +100,17 @@ class Order extends Model
                 'completed_at' => now(),
             ]);
 
-            // Set rider back to available
-            $rider->update([
-                'rider_status' => 'available',
-                'is_available' => true,
-            ]);
+            // Set rider back to available if they are not busy with another active delivery
+            $hasOtherActive = Delivery::where('rider_id', $rider->id)
+                ->where('order_id', '!=', $this->id)
+                ->whereIn('status', ['accepted', 'arrived_at_restaurant', 'picked_up', 'on_the_way'])
+                ->exists();
+            if (!$hasOtherActive) {
+                $rider->update([
+                    'rider_status' => 'available',
+                    'is_available' => true,
+                ]);
+            }
 
             $rider->notifyApp(
                 'Payout received',

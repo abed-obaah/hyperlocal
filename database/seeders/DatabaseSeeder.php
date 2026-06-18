@@ -42,8 +42,8 @@ class DatabaseSeeder extends Seeder
         // ---- Demo accounts (password = "password") ----
         User::create(['name' => 'Platform Admin', 'email' => 'admin@hyperlocal.test', 'password' => 'password', 'role' => 'admin']);
         User::create(['name' => 'Jerry Adams', 'email' => 'jerry@example.com', 'password' => 'password', 'role' => 'customer', 'phone' => '+1 555 0100', 'avatar' => $this->avatar('jerry-user')]);
-        User::create(['name' => 'Daniel Okoro', 'email' => 'rider1@hyperlocal.test', 'password' => 'password', 'role' => 'rider', 'phone' => '+1 555 0142', 'avatar' => $this->avatar('daniel-rider'), 'is_available' => true]);
-        User::create(['name' => 'Sophia Bello', 'email' => 'rider2@hyperlocal.test', 'password' => 'password', 'role' => 'rider', 'phone' => '+1 555 0188', 'avatar' => $this->avatar('sophia-rider'), 'is_available' => true]);
+        User::create(['name' => 'Daniel Okoro', 'email' => 'rider1@hyperlocal.test', 'password' => 'password', 'role' => 'rider', 'phone' => '+1 555 0142', 'avatar' => $this->avatar('daniel-rider'), 'is_available' => true, 'rider_status' => 'available']);
+        User::create(['name' => 'Sophia Bello', 'email' => 'rider2@hyperlocal.test', 'password' => 'password', 'role' => 'rider', 'phone' => '+1 555 0188', 'avatar' => $this->avatar('sophia-rider'), 'is_available' => true, 'rider_status' => 'available']);
 
         // ---- Restaurants (mirrors the mobile app's mock data) ----
         $restaurants = [
