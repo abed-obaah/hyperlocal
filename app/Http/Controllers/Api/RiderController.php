@@ -160,15 +160,20 @@ class RiderController extends Controller
             ]
         );
 
-        // Let admins know it's ready to be completed (which releases the rider payout).
         if ($order) {
-            User::where('role', 'admin')->get()->each(fn (User $admin) => $admin->notifyApp(
-                'Order delivered',
-                "{$order->order_number} was delivered — complete it to pay the rider.",
-                'checkmark-circle',
-                $order->notificationData(),
-                'admin',
-            ));
+            // If the order has already been paid (e.g. Card/Wallet), automatically complete it!
+            if ($order->payment_status === 'paid') {
+                $order->completeOrder();
+            } else {
+                // Otherwise let admins know it's ready to be completed
+                User::where('role', 'admin')->get()->each(fn (User $admin) => $admin->notifyApp(
+                    'Order delivered',
+                    "{$order->order_number} was delivered — complete it to pay the rider.",
+                    'checkmark-circle',
+                    $order->notificationData(),
+                    'admin',
+                ));
+            }
         }
 
         return new DeliveryResource($delivery->load(['order.items', 'order.restaurant']));

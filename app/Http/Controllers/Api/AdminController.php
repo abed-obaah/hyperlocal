@@ -143,50 +143,7 @@ class AdminController extends Controller
     {
         abort_unless($order->status === 'delivered', 422, 'Order is not delivered yet.');
 
-        $delivery = $order->delivery;
-        if ($delivery && $delivery->status !== 'completed' && $delivery->rider) {
-            $rider = $delivery->rider;
-            
-            // Check if already paid out in rider_earnings
-            $earning = \App\Models\RiderEarning::where('delivery_id', $delivery->id)->first();
-            if (!$earning || $earning->status !== 'paid') {
-                // Credit wallet
-                $rider->creditWallet((float) $delivery->amount, 'rider_payout', $order);
-                
-                if ($earning) {
-                    $earning->update(['status' => 'paid']);
-                } else {
-                    \App\Models\RiderEarning::create([
-                        'rider_id' => $rider->id,
-                        'delivery_id' => $delivery->id,
-                        'amount' => (float) $delivery->amount,
-                        'status' => 'paid',
-                    ]);
-                }
-            }
-
-            $delivery->update([
-                'status' => 'completed',
-                'paid_out_at' => now(),
-                'completed_at' => now(),
-            ]);
-
-            // Set rider back to available
-            $rider->update([
-                'rider_status' => 'available',
-                'is_available' => true,
-            ]);
-
-            $rider->notifyApp(
-                'Payout received',
-                '₦'.number_format((float) $delivery->amount, 2)." added to your wallet for {$order->order_number}.",
-                'cash',
-                $order->notificationData(),
-                'payout',
-            );
-        }
-
-        $order->update(['completed_at' => now()]);
+        $order->completeOrder();
 
         return new OrderResource($order->load(['items', 'restaurant', 'rider']));
     }
@@ -256,14 +213,25 @@ class AdminController extends Controller
         $order->update(['payment_status' => 'paid']);
         $order->notifyCustomer('Payment confirmed', "We've received payment for {$order->order_number}.", 'card');
 
+        if ($order->status === 'delivered') {
+            $order->completeOrder();
+        }
+
         return response()->json(['paymentStatus' => 'paid']);
     }
 
     /** Mark a paid / refund-pending order as refunded. */
     public function refundOrder(Request $request, Order $order)
     {
+        abort_unless($order->payment_status === 'refund_pending', 422, 'Order does not have a pending refund.');
+
         $order->update(['payment_status' => 'refunded']);
-        $order->notifyCustomer('Refund issued', "Your payment for {$order->order_number} has been refunded.", 'cash');
+        $order->customer?->creditWallet((float) $order->total, 'order_refund', $order);
+        $order->notifyCustomer(
+            'Refund issued', 
+            "Your payment of ₦" . number_format($order->total, 2) . " for {$order->order_number} has been refunded to your wallet.", 
+            'cash'
+        );
 
         return response()->json(['paymentStatus' => 'refunded']);
     }
@@ -277,14 +245,13 @@ class AdminController extends Controller
         $order->update([
             'status' => 'cancelled',
             'rejected_reason' => $data['reason'] ?? 'Cancelled by admin',
-            'payment_status' => $wasPaid ? 'refunded' : $order->payment_status,
+            'payment_status' => $wasPaid ? 'refund_pending' : $order->payment_status,
         ]);
 
         if ($wasPaid) {
-            $order->customer?->creditWallet((float) $order->total, 'order_refund', $order);
             $order->notifyCustomer(
                 'Order cancelled',
-                $order->rejected_reason.' ₦'.number_format($order->total, 2).' has been refunded to your wallet.',
+                $order->rejected_reason.'. A refund has been initiated.',
                 'close-circle',
             );
         } else {

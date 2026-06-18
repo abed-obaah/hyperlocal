@@ -67,15 +67,13 @@ class RestaurantDashboardController extends Controller
         $order->update([
             'status' => 'rejected',
             'rejected_reason' => $data['reason'] ?? 'Restaurant unavailable',
-            // Paid orders are refunded straight to the customer's wallet.
-            'payment_status' => $wasPaid ? 'refunded' : $order->payment_status,
+            'payment_status' => $wasPaid ? 'refund_pending' : $order->payment_status,
         ]);
 
         if ($wasPaid) {
-            $order->customer?->creditWallet((float) $order->total, 'order_refund', $order);
             $order->notifyCustomer(
                 'Order declined',
-                $order->rejected_reason.' ₦'.number_format($order->total, 2).' has been refunded to your wallet.',
+                $order->rejected_reason.'. A refund has been initiated.',
                 'close-circle',
             );
         } else {

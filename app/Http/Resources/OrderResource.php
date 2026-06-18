@@ -16,6 +16,7 @@ class OrderResource extends JsonResource
         'picked_up' => 'on-the-way',
         'on_the_way' => 'on-the-way',
         'delivered' => 'delivered',
+        'completed' => 'delivered',
         'rejected' => 'received',
         'cancelled' => 'received',
     ];

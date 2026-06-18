@@ -68,4 +68,56 @@ class Order extends Model
     {
         return ['orderId' => (string) $this->id, 'restaurantId' => (string) $this->restaurant_id];
     }
+
+    /** Reusable logic to transition order and delivery to completed state, pay the rider, and send notifications. */
+    public function completeOrder(): void
+    {
+        $delivery = $this->delivery;
+        if ($delivery && $delivery->status !== 'completed' && $delivery->rider) {
+            $rider = $delivery->rider;
+            
+            // Check if already paid out in rider_earnings
+            $earning = \App\Models\RiderEarning::where('delivery_id', $delivery->id)->first();
+            if (!$earning || $earning->status !== 'paid') {
+                // Credit wallet
+                $rider->creditWallet((float) $delivery->amount, 'rider_payout', $this);
+                
+                if ($earning) {
+                    $earning->update(['status' => 'paid']);
+                } else {
+                    \App\Models\RiderEarning::create([
+                        'rider_id' => $rider->id,
+                        'delivery_id' => $delivery->id,
+                        'amount' => (float) $delivery->amount,
+                        'status' => 'paid',
+                    ]);
+                }
+            }
+
+            $delivery->update([
+                'status' => 'completed',
+                'paid_out_at' => now(),
+                'completed_at' => now(),
+            ]);
+
+            // Set rider back to available
+            $rider->update([
+                'rider_status' => 'available',
+                'is_available' => true,
+            ]);
+
+            $rider->notifyApp(
+                'Payout received',
+                '₦'.number_format((float) $delivery->amount, 2)." added to your wallet for {$this->order_number}.",
+                'cash',
+                $this->notificationData(),
+                'payout',
+            );
+        }
+
+        $this->update([
+            'status' => 'completed',
+            'completed_at' => now()
+        ]);
+    }
 }
