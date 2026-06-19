@@ -379,6 +379,10 @@ class RiderController extends Controller
             ],
             'to_restaurant' => $toRestaurant->polyline,
             'to_customer' => $toCustomer->polyline,
+            'to_restaurant_distance' => $toRestaurant->distance_meters,
+            'to_restaurant_duration' => $toRestaurant->duration_seconds,
+            'to_customer_distance' => $toCustomer->distance_meters,
+            'to_customer_duration' => $toCustomer->duration_seconds,
             'distance_meters' => $toRestaurant->distance_meters + $toCustomer->distance_meters,
             'duration_seconds' => $toRestaurant->duration_seconds + $toCustomer->duration_seconds,
         ]);
