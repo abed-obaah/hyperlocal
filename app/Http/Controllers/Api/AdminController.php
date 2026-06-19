@@ -177,6 +177,7 @@ class AdminController extends Controller
                 'phone' => $r->phone,
                 'photo' => $r->avatar,
                 'isAvailable' => (bool) $r->is_available,
+                'status' => $r->rider_status,
                 'completedDeliveries' => (clone $finished)->count(),
                 'todayDeliveries' => (clone $finished)->whereDate('delivered_at', today())->count(),
                 'totalEarnings' => round((clone $paid)->sum('amount'), 2),

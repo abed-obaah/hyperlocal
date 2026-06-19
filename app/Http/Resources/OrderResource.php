@@ -55,6 +55,7 @@ class OrderResource extends JsonResource
             'address' => $this->address,
             'status' => self::STATUS_MAP[$this->status] ?? 'received',
             'backendStatus' => $this->status,
+            'deliveryStatus' => $this->delivery?->status,
             'placedAt' => optional($this->placed_at ?? $this->created_at)->toISOString(),
             'completedAt' => optional($this->completed_at)->toISOString(),
             'etaMinutes' => $this->eta_minutes,
