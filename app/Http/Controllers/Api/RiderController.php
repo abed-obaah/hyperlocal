@@ -7,6 +7,9 @@ use App\Http\Resources\DeliveryResource;
 use App\Models\Delivery;
 use App\Models\User;
 use App\Models\RiderEarning;
+use App\Models\RiderLocation;
+use App\Models\DeliveryRoute;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 
 class RiderController extends Controller
@@ -254,5 +257,190 @@ class RiderController extends Controller
         }
 
         return response()->json(['error' => 'Invalid status transition.'], 422);
+    }
+
+    public function updateLocation(Request $request)
+    {
+        $data = $request->validate([
+            'delivery_id' => 'required|exists:deliveries,id',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'heading' => 'nullable|numeric',
+            'speed' => 'nullable|numeric',
+            'accuracy' => 'nullable|numeric',
+        ]);
+
+        $delivery = Delivery::findOrFail($data['delivery_id']);
+        abort_unless($delivery->rider_id === $request->user()->id, 403);
+
+        $now = now();
+        $location = RiderLocation::create([
+            'rider_id' => $request->user()->id,
+            'delivery_id' => $delivery->id,
+            'latitude' => $data['latitude'],
+            'longitude' => $data['longitude'],
+            'heading' => $data['heading'] ?? null,
+            'speed' => $data['speed'] ?? null,
+            'accuracy' => $data['accuracy'] ?? null,
+        ]);
+
+        $request->user()->update([
+            'current_latitude' => $data['latitude'],
+            'current_longitude' => $data['longitude'],
+        ]);
+
+        // Forward location update to Node.js Socket.IO server for websocket broadcasting
+        try {
+            Http::timeout(2)->post('http://127.0.0.1:3001/api/broadcast', [
+                'delivery_id' => (int) $delivery->id,
+                'rider_id' => (int) $request->user()->id,
+                'latitude' => (float) $data['latitude'],
+                'longitude' => (float) $data['longitude'],
+                'heading' => isset($data['heading']) ? (float) $data['heading'] : null,
+                'speed' => isset($data['speed']) ? (float) $data['speed'] : null,
+                'accuracy' => isset($data['accuracy']) ? (float) $data['accuracy'] : null,
+                'updated_at' => $location->created_at->toISOString(),
+            ]);
+        } catch (\Exception $e) {
+            // Fail silently if Socket.IO server is down or unreachable
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function getRoute(Request $request, Delivery $delivery)
+    {
+        $user = $request->user();
+        $isRider = ($delivery->rider_id === $user->id);
+        $isCustomer = ($delivery->order?->customer_id === $user->id);
+        $isAdmin = ($user->role === 'admin');
+        abort_unless($isRider || $isCustomer || $isAdmin, 403);
+
+        $restaurant = $delivery->order->restaurant;
+        $order = $delivery->order;
+
+        $restLat = (float) $restaurant->latitude;
+        $restLng = (float) $restaurant->longitude;
+
+        $custLat = isset($order->address['latitude']) ? (float) $order->address['latitude'] : 5.7961;
+        $custLng = isset($order->address['longitude']) ? (float) $order->address['longitude'] : 6.1120;
+
+        $riderLat = (float) ($delivery->rider?->current_latitude ?? $delivery->rider_locations()->latest()->first()?->latitude ?? ($restLat - 0.005));
+        $riderLng = (float) ($delivery->rider?->current_longitude ?? $delivery->rider_locations()->latest()->first()?->longitude ?? ($restLng - 0.005));
+
+        // 1. Get/cache route from rider to restaurant
+        $toRestaurant = DeliveryRoute::where('delivery_id', $delivery->id)
+            ->where('route_type', 'to_restaurant')
+            ->first();
+
+        if (!$toRestaurant) {
+            $distance = 1000;
+            $duration = 300;
+            $polyline = $this->fetchOsrmRoute($riderLng, $riderLat, $restLng, $restLat, $distance, $duration);
+            $toRestaurant = DeliveryRoute::create([
+                'delivery_id' => $delivery->id,
+                'route_type' => 'to_restaurant',
+                'polyline' => $polyline,
+                'distance_meters' => $distance,
+                'duration_seconds' => $duration,
+            ]);
+        }
+
+        // 2. Get/cache route from restaurant to customer
+        $toCustomer = DeliveryRoute::where('delivery_id', $delivery->id)
+            ->where('route_type', 'to_customer')
+            ->first();
+
+        if (!$toCustomer) {
+            $distance = 1000;
+            $duration = 300;
+            $polyline = $this->fetchOsrmRoute($restLng, $restLat, $custLng, $custLat, $distance, $duration);
+            $toCustomer = DeliveryRoute::create([
+                'delivery_id' => $delivery->id,
+                'route_type' => 'to_customer',
+                'polyline' => $polyline,
+                'distance_meters' => $distance,
+                'duration_seconds' => $duration,
+            ]);
+        }
+
+        return response()->json([
+            'rider' => [
+                'latitude' => $riderLat,
+                'longitude' => $riderLng,
+            ],
+            'restaurant' => [
+                'latitude' => $restLat,
+                'longitude' => $restLng,
+            ],
+            'customer' => [
+                'latitude' => $custLat,
+                'longitude' => $custLng,
+            ],
+            'to_restaurant' => $toRestaurant->polyline,
+            'to_customer' => $toCustomer->polyline,
+            'distance_meters' => $toRestaurant->distance_meters + $toCustomer->distance_meters,
+            'duration_seconds' => $toRestaurant->duration_seconds + $toCustomer->duration_seconds,
+        ]);
+    }
+
+    private function fetchOsrmRoute($lng1, $lat1, $lng2, $lat2, &$distance, &$duration)
+    {
+        try {
+            $url = "https://router.project-osrm.org/route/v1/driving/{$lng1},{$lat1};{$lng2},{$lat2}?overview=full&geometries=geojson";
+            $response = Http::timeout(3)->get($url);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (!empty($data['routes'][0]['geometry']['coordinates'])) {
+                    $coordinates = $data['routes'][0]['geometry']['coordinates'];
+                    $distance = (int) ($data['routes'][0]['distance'] ?? 1000);
+                    $duration = (int) ($data['routes'][0]['duration'] ?? 300);
+
+                    return array_map(fn($coord) => [
+                        'latitude' => (float) $coord[1],
+                        'longitude' => (float) $coord[0]
+                    ], $coordinates);
+                }
+            }
+        } catch (\Exception $e) {
+            // ignore & fallback below
+        }
+
+        // Fallback to straight line
+        $distance = 1000;
+        $duration = 300;
+        return [
+            ['latitude' => (float) $lat1, 'longitude' => (float) $lng1],
+            ['latitude' => (float) $lat2, 'longitude' => (float) $lng2],
+        ];
+    }
+
+    public function getLatestLocation(Request $request, Delivery $delivery)
+    {
+        $user = $request->user();
+        $isRider = ($delivery->rider_id === $user->id);
+        $isCustomer = ($delivery->order?->customer_id === $user->id);
+        $isAdmin = ($user->role === 'admin');
+        abort_unless($isRider || $isCustomer || $isAdmin, 403);
+
+        $location = RiderLocation::where('delivery_id', $delivery->id)
+            ->latest()
+            ->first();
+
+        if (!$location) {
+            return response()->json(null);
+        }
+
+        return response()->json([
+            'delivery_id' => (int) $location->delivery_id,
+            'rider_id' => (int) $location->rider_id,
+            'latitude' => (float) $location->latitude,
+            'longitude' => (float) $location->longitude,
+            'heading' => $location->heading !== null ? (float) $location->heading : null,
+            'speed' => $location->speed !== null ? (float) $location->speed : null,
+            'accuracy' => $location->accuracy !== null ? (float) $location->accuracy : null,
+            'updated_at' => $location->updated_at->toISOString(),
+        ]);
     }
 }

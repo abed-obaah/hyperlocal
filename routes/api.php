@@ -111,6 +111,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('deliveries/{delivery}/on-the-way', [RiderController::class, 'onTheWay']);
         Route::post('deliveries/{delivery}/deliver', [RiderController::class, 'deliver']);
         Route::patch('deliveries/{delivery}/status', [RiderController::class, 'updateStatus']);
+        Route::post('location', [RiderController::class, 'updateLocation']);
+        Route::get('deliveries/{delivery}/route', [RiderController::class, 'getRoute']);
+        Route::get('deliveries/{delivery}/location', [RiderController::class, 'getLatestLocation']);
     });
 
     // ---- Admin dashboard ----
