@@ -86,10 +86,22 @@ class RiderController extends Controller
         $this->authorizeDelivery($request, $delivery);
         abort_unless($delivery->status === 'assigned', 422, 'You can only decline pending assignments.');
 
-        $delivery->update(['status' => 'declined', 'rider_id' => null]);
-        $delivery->order?->update(['status' => 'ready', 'rider_id' => null]);
-
         $user = $request->user();
+        $order = $delivery->order;
+
+        $delivery->update(['status' => 'declined', 'rider_id' => null]);
+        $order?->update(['status' => 'ready', 'rider_id' => null]);
+
+        if ($order) {
+            User::where('role', 'admin')->get()->each(fn (User $admin) => $admin->notifyApp(
+                'Delivery declined',
+                "{$order->order_number} was declined by rider {$user->name}.",
+                'close-circle',
+                $order->notificationData(),
+                'admin',
+            ));
+        }
+
         if ($user->rider_status === 'busy') {
             $user->update([
                 'rider_status' => 'available',
