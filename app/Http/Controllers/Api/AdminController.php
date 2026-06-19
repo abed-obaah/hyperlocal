@@ -93,12 +93,21 @@ class AdminController extends Controller
 
     public function availableRiders()
     {
-        return User::where('role', 'rider')->where('rider_status', 'available')->get()->map(fn ($r) => [
-            'id' => (string) $r->id,
-            'name' => $r->name,
-            'phone' => $r->phone,
-            'photo' => $r->avatar,
-        ]);
+        $assignedRiderIds = Delivery::whereIn('status', ['assigned', 'accepted', 'arrived_at_restaurant', 'picked_up', 'on_the_way'])
+            ->whereNotNull('rider_id')
+            ->pluck('rider_id')
+            ->toArray();
+
+        return User::where('role', 'rider')
+            ->where('rider_status', 'available')
+            ->whereNotIn('id', $assignedRiderIds)
+            ->get()
+            ->map(fn ($r) => [
+                'id' => (string) $r->id,
+                'name' => $r->name,
+                'phone' => $r->phone,
+                'photo' => $r->avatar,
+            ]);
     }
 
     /** Assign an available rider to an order. */
@@ -108,7 +117,12 @@ class AdminController extends Controller
 
         $rider = User::findOrFail($data['riderId']);
         abort_unless($rider->role === 'rider', 422, 'Selected user is not a rider.');
-        abort_if($rider->rider_status === 'busy', 422, 'This rider is currently busy with another delivery.');
+
+        $hasActiveOrAssigned = Delivery::where('rider_id', $rider->id)
+            ->where('order_id', '!=', $order->id)
+            ->whereIn('status', ['assigned', 'accepted', 'arrived_at_restaurant', 'picked_up', 'on_the_way'])
+            ->exists();
+        abort_if($hasActiveOrAssigned, 422, 'This rider is currently assigned to or busy with another delivery.');
 
         $previousRiderId = $order->rider_id;
         if ($previousRiderId && $previousRiderId != $data['riderId']) {
